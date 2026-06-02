@@ -15,7 +15,7 @@ https://www.biorxiv.org/content/10.64898/2026.03.27.714864v1
 A pipeline for spectral demixing SMLM adapted for two-camera setups (like the Abbelight SAFe360).
 
 You need to have PSF calibration files prepared (either from SMAP or ui-PSF).  Then for every pair of image stacks (obtained from the two cameras) inside a folder, it automates the following steps:
-1. Fitting of each side independently using spline fitting from the PSF calibrations.
+1. Fitting of each side (R and T) independently using spline fitting from the PSF calibrations.
 2. Calculation of the transform between channels from step 1 data.
 3. Global fitting using GlobLoc (with the individual fitting from step 1 as seed), with either fixed ratios (performs channel assignment) or free ratios (channel assignment has to be done downstream of the pipeline using the calculated ratios).
 4. RCC and COMET drift correction (COMET has to be installed separately)
@@ -92,14 +92,14 @@ python run_pipeline.py
 
 ## Steps upstream of pypline
 ### Preparing the PSF
-Can be done with SMAP (in Matlab) or ui-PSF (within a different env). Uses multiple folders with one R, one T Z-stack in each.
+Can be done with SMAP (in Matlab) or ui-PSF (within a different env). Both use multiple folders the two beads stacks (R and T) in each.
 
-SMAP outputs the file to use: Axcal_inputZStack_cam_R_3dcal.mat.
+SMAP outputs the file to use in run_pipeline.py: Axcal_inputZStack_cam_R_3dcal.mat
 
-ui-PSF uses the uiPSF_prepare_bead_stacks.py script to stitch the R and T into a single image (currently as a mat file). ui-PSF uses the Zernicke_vector mode and outputs the file to use: xySwap_PSFmodel_zernike_vector_multi.h5
+ui-PSF uses the uiPSF_prepare_bead_stacks.py script to stitch the R and T into a single image (currently exported as a .mat file). ui-PSF uses the Zernicke_vector mode and outputs the following file to use in run_pipeline.py: xySwap_PSFmodel_zernike_vector_multi.h5
 
 ### Preparing the cylindrical lens transform
-Uses the cylindrical_lens_correction_calibration.py. Has to use the Matlab PSF calibration as of now (.mat file, not ui-PSF .h5). Outputs the file to use in cylindrical_lens_correction_calibration.py: as H_cyl_to_nocyl.txt
+Use the cylindrical_lens_correction_calibration.py script. The script has to use the Matlab PSF calibration as of now (.mat file, not ui-PSF .h5). The script outputs the file to use in run_pipeline.py: H_cyl_to_nocyl.txt
 
 ## Adding COMET drift correction
 download the COMET repository as a .zip file: https://github.com/gpufit/Comet
