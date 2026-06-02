@@ -29,7 +29,7 @@ settings = Settings(
     # =========================================================================
     # Data path + PSF model selection
     # =========================================================================
-    data_dir=Path(r"g:\pypline\data"),
+    data_dir=Path(r"path\to\data"),
 
     # PSF model format:
     #   "SMAP"  -> calibrated in SMAP module "calibrate3DsplinePSF", saved as .mat file
@@ -39,7 +39,7 @@ settings = Settings(
     # Set this path to either:
     #   - SMAP .mat model if psf_model_format="SMAP"
     #   - uiPSF .h5 model if psf_model_format="uiPSF"
-    psf_model=Path(r"g:\pypline\calibration\241121_axcal\mat_for_uiPSF\uiPSF_output\xySwap_PSFmodel_zernike_vector_multi.h5"),
+    psf_model=Path(r"path\to\psf_model.h5"),
 
     # uiPSF-only options. Ignored when psf_model_format="SMAP".
     uipsf_coeff_key="coeff",       # "coeff", "coeff_reverse", or "coeff_bead"
@@ -113,7 +113,7 @@ settings = Settings(
     # =========================================================================
     apply_cylindrical_lens_xy_correction_for_render=True,  # xy homography to correct cylindrical lens distortion
     cylindrical_lens_xy_homography=Path(
-        r"g:\pypline\calibration\3Dto2D_correction_example_folder\cylindrical_lens_calibration_output\H_cyl_to_nocyl.txt"
+        r"path\to\cyl_lens_correction_projective_homography.txt"
     ),
 )
 
