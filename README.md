@@ -13,7 +13,7 @@ https://www.biorxiv.org/content/10.64898/2026.03.27.714864v1
 
 ## Install procedure
 ### Installing miniforge
-Download and install Miniforge 3
+Download and install Miniforge 3: https://conda-forge.org/download/
 
 ### Setting up the environment
 In the Miniforge prompt, run:
@@ -71,9 +71,10 @@ cd C:\Users\chris\christo\Processing\pypline
 
 ## Using pypline
 ### Editing the main pypline file
-Open run_pipeline.py with a code editor,check and edit all paths and options
+Open run_pipeline.py with a code editor, check and edit the paths and options.
 
 ### Running pypline:
+In the Miniforge prompt:
 ```
 python run_pipeline.py
 ```
