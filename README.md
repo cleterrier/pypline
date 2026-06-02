@@ -2,7 +2,7 @@
 Spectral demixing SMLM pipeline in python
 
 ## What is pypline
-It's pipeline for spectral demixing SMLM adapted for two-camera setups (like the Abbelight SAFe360).
+A pipeline for spectral demixing SMLM adapted for two-camera setups (like the Abbelight SAFe360).
 
 You need to have PSF calibration files prepared (either from SMAP or ui-PSF).  Then for every pair of image stacks (obtained from the two cameras) inside a folder, it automates the following steps:
 1- Fitting of each side independently using spline fitting from the PSF calibrations.
