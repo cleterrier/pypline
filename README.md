@@ -1,5 +1,5 @@
 # pypline
-Spectral demixing 3D-SMLM pipeline in python. Coded by Christopher Parperis (NeuroCyto lab).
+Spectral demixing 3D-SMLM pipeline. It uses state-of-the-art third-party code for fitting and processing, wrapped into a consolidated python workflow. Coded by Christopher Parperis (NeuroCyto lab).
 
 ## Third-party code
 - Globloc (python DLLs, included in this repository):  
