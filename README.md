@@ -92,16 +92,14 @@ python run_pipeline.py
 
 ## Steps upstream of pypline
 ### Preparing the PSF
-Can be done with SMAP (in Matlab) or ui-PSF (within a different env)
-Uses multiple folders with one R, one T Z-stack in each
-SMAP outputs the file to use: Axcal_inputZStack_cam_R_3dcal.mat
-ui-PSF uses the uiPSF_prepare_bead_stacks.py script to stitch the R and T into a single image (currently as a mat file)
-ui-PSF uses the Zernicke_vector mode and outputs the file to use: xySwap_PSFmodel_zernike_vector_multi.h5
+Can be done with SMAP (in Matlab) or ui-PSF (within a different env). Uses multiple folders with one R, one T Z-stack in each.
+
+SMAP outputs the file to use: Axcal_inputZStack_cam_R_3dcal.mat.
+
+ui-PSF uses the uiPSF_prepare_bead_stacks.py script to stitch the R and T into a single image (currently as a mat file). ui-PSF uses the Zernicke_vector mode and outputs the file to use: xySwap_PSFmodel_zernike_vector_multi.h5
 
 ### Preparing the cylindrical lens transform
-Uses the cylindrical_lens_correction_calibration.py
-Has to use the Matlab PSF calibration as of now (.mat file, not ui-PSF .h5)
-Outputs the file to use in cylindrical_lens_correction_calibration.py: as H_cyl_to_nocyl.txt
+Uses the cylindrical_lens_correction_calibration.py. Has to use the Matlab PSF calibration as of now (.mat file, not ui-PSF .h5). Outputs the file to use in cylindrical_lens_correction_calibration.py: as H_cyl_to_nocyl.txt
 
 ## Adding COMET drift correction
 download the COMET repository as a .zip file: https://github.com/gpufit/Comet
