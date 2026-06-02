@@ -9,7 +9,7 @@ Global fitting for high-accuracy multi-channel single-molecule localization. Yim
 https://www.nature.com/articles/s41467-022-30719-4
 - Optional: uiPSF for PSF calibration (to be done separately, upstream of pypline)  
 https://github.com/ries-lab/uiPSF  
-Sheng Liu, Jianwei Chen, Jonas Hellgoth, Lucas-Raphael Müller, Boris Ferdman, Christian Karras, Dafei Xiao, Keith A Lidke, Rainer Heintzmann, Yoav Shechtman, Yiming, Jonas Ries. Universal inverse modeling of point spread functions for SMLM localization and microscope characterization. Nat Methods 2024 Jun;21(6):1082-1093.
+Universal inverse modeling of point spread functions for SMLM localization and microscope characterization. Sheng Liu, Jianwei Chen, Jonas Hellgoth, Lucas-Raphael Müller, Boris Ferdman, Christian Karras, Dafei Xiao, Keith A Lidke, Rainer Heintzmann, Yoav Shechtman, Yiming, Jonas Ries. Nat Methods 2024 Jun;21(6):1082-1093.
 - Optional: COMET for drift correction (to be added manually):  
 https://github.com/gpufit/Comet  
 Cost-function Optimized Maximal Overlap Drift Estimation for Single Molecule Localization Microscopy. Lenny Reinkensmeier, Sarah Aufmkolk, Irene Farabella, Alexander Egner, Mark Bates. bioRxiv March 31, 2026.  
