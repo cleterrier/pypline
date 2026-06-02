@@ -1,5 +1,6 @@
 # pypline
 Spectral demixing 3D-SMLM pipeline in python
+code by Christopher Parperis
 
 ## Pypline uses the following third-party code
 - Globloc (python DLLs, included in this repository):  
