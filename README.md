@@ -66,7 +66,7 @@ python -c "from numba import cuda; print('CUDA available:',cuda.is_available())"
 Get the pypline repository as a .zip file and put in in a 'pypline' folder locally
 Go into the folder
 ```
-cd "C:\Users\chris\christo\Processing\pypline
+cd C:\Users\chris\christo\Processing\pypline
 ```
 
 ## Using pypline
