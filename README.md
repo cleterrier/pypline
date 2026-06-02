@@ -2,12 +2,15 @@
 Spectral demixing 3D-SMLM pipeline in python
 code by Christopher Parperis
 
-## Pypline uses the following third-party code
+## Third-party code
 - Globloc (python DLLs, included in this repository):  
 https://github.com/Li-Lab-SUSTech/GlobLoc/tree/master/GlobLoc_python/source  
-Yiming Li, Wei Shi, Sheng Liu, Ivana Cavka, Yu-Le Wu, Ulf Matti, Decheng Wu, Simone Koehler, Jonas Ries. Global fitting for high-accuracy multi-channel single-molecule localization. Nat. Commun. 13, 3133 (2022).  
+Global fitting for high-accuracy multi-channel single-molecule localization. Yiming Li, Wei Shi, Sheng Liu, Ivana Cavka, Yu-Le Wu, Ulf Matti, Decheng Wu, Simone Koehler, Jonas Ries. Nat. Commun. 2022; 13, 3133.  
 https://www.nature.com/articles/s41467-022-30719-4
-- Optional: COMET for drift correction (has to be added separately):  
+- Optional: uiPSF for PSF calibration (to be done separately, upstream of pypline)  
+https://github.com/ries-lab/uiPSF  
+Sheng Liu, Jianwei Chen, Jonas Hellgoth, Lucas-Raphael Müller, Boris Ferdman, Christian Karras, Dafei Xiao, Keith A Lidke, Rainer Heintzmann, Yoav Shechtman, Yiming, Jonas Ries. Universal inverse modeling of point spread functions for SMLM localization and microscope characterization. Nat Methods 2024 Jun;21(6):1082-1093.
+- Optional: COMET for drift correction (to be added manually):  
 https://github.com/gpufit/Comet  
 Cost-function Optimized Maximal Overlap Drift Estimation for Single Molecule Localization Microscopy. Lenny Reinkensmeier, Sarah Aufmkolk, Irene Farabella, Alexander Egner, Mark Bates. bioRxiv March 31, 2026.  
 https://www.biorxiv.org/content/10.64898/2026.03.27.714864v1
