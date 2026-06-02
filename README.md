@@ -18,7 +18,6 @@ Download and install Miniforge 3
 ### Setting up the environment
 In the Miniforge prompt, run:
 ```
-mamba create -n pyglobloc-py310 python=3.10 -y
 mamba create -n pypline-py310 python=3.10 -y
 ```
 this will create the environment with python 3.10
