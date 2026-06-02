@@ -1,6 +1,16 @@
 # pypline
 Spectral demixing SMLM pipeline in python
 
+## Pypline uses the following third-party code
+- Globloc (python DLLs, included in this repository):  
+https://github.com/Li-Lab-SUSTech/GlobLoc/tree/master/GlobLoc_python/source  
+Yiming Li, Wei Shi, Sheng Liu, Ivana Cavka, Yu-Le Wu, Ulf Matti, Decheng Wu, Simone Koehler, Jonas Ries. Global fitting for high-accuracy multi-channel single-molecule localization. Nat. Commun. 13, 3133 (2022).  
+https://www.nature.com/articles/s41467-022-30719-4
+- Optional: COMET for drift correction (has to be added separately):  
+https://github.com/gpufit/Comet  
+Cost-function Optimized Maximal Overlap Drift Estimation for Single Molecule Localization Microscopy. Lenny Reinkensmeier, Sarah Aufmkolk, Irene Farabella, Alexander Egner, Mark Bates. bioRxiv March 31, 2026.  
+https://www.biorxiv.org/content/10.64898/2026.03.27.714864v1
+
 ## What is pypline
 A pipeline for spectral demixing SMLM adapted for two-camera setups (like the Abbelight SAFe360).
 
@@ -11,16 +21,6 @@ You need to have PSF calibration files prepared (either from SMAP or ui-PSF).  T
 4. RCC and COMET drift correction (COMET has to be installed separately)
 5. Grouping of blinking events accross frames.
 6. Export as ThunderSTORM-compatible csv files for downstream visualization.
-
-## Pypline uses the following third-party code
-- Globloc (python DLLs, included in this repository):  
-https://github.com/Li-Lab-SUSTech/GlobLoc/tree/master/GlobLoc_python/source  
-Yiming Li, Wei Shi, Sheng Liu, Ivana Cavka, Yu-Le Wu, Ulf Matti, Decheng Wu, Simone Koehler, Jonas Ries. Global fitting for high-accuracy multi-channel single-molecule localization. Nat. Commun. 13, 3133 (2022).  
-https://www.nature.com/articles/s41467-022-30719-4
-- Optional: COMET for drift correction (has to be added separately):  
-https://github.com/gpufit/Comet  
-Cost-function Optimized Maximal Overlap Drift Estimation for Single Molecule Localization Microscopy. Lenny Reinkensmeier, Sarah Aufmkolk, Irene Farabella, Alexander Egner, Mark Bates. bioRxiv March 31, 2026.  
-https://www.biorxiv.org/content/10.64898/2026.03.27.714864v1
 
 ## Install procedure
 ### Installing miniforge
