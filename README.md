@@ -46,7 +46,7 @@ should just return:
 -conda-forge
 ```
 
-If there are more (XXX for example defaults), remove them using:
+If there are more (for example 'defaults'), remove them using:
 ```
 conda config --remove channels defaults
 ```
