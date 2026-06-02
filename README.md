@@ -103,7 +103,7 @@ SMAP output to use in run_pipeline.py: Axcal_inputZStack_cam_R_3dcal.mat
 uiPSF uses the uiPSF_prepare_bead_stacks.py script to stitch the R and T into a single image (currently exported as a .mat file). We used the Zernicke_vector mode, with the following output file being used in run_pipeline.py: xySwap_PSFmodel_zernike_vector_multi.h5
 
 ### Preparing the cylindrical lens transform
-Use the cylindrical_lens_correction_calibration.py script. The script has to use the Matlab PSF calibration as of now (.mat file, not ui-PSF .h5). The script outputs the file to use in run_pipeline.py: H_cyl_to_nocyl.txt
+Use the cylindrical_lens_correction_calibration.py script. The script can use a SMAP .mat PSF calibration or a uiPSF .h5 file). The script outputs the file to use in run_pipeline.py: H_cyl_to_nocyl.txt
 
 ## Adding COMET drift correction
 download the COMET repository as a .zip file: https://github.com/gpufit/Comet
