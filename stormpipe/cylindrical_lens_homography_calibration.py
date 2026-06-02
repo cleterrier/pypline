@@ -51,15 +51,20 @@ import pandas as pd
 
 from .loclib_ctypes import localizationlib
 
-from .pipeline_config import Settings
+from .pipeline_config import Settings, psf_model_format_normalized
 from .mle_fitting_drivers import (
-    prepare_channel_models,
+    ChannelModel,
     fit_stage1_single_channel,
 )
-from .mle_fitting_helpers import rois_nyx_image_to_loclib_nxy
+from .mle_fitting_helpers import (
+    build_single_channel_splinesize_for_dll,
+    coeff_xyzb_matlab_to_single_channel_loclib_bzyx,
+    rois_nyx_image_to_loclib_nxy,
+)
 from .roi_preparation import iter_single_channel_roi_batches_from_tiff
-from .preprocessing_utils import apply_homography
+from .preprocessing_utils import apply_homography, load_channel_psf_models
 from .stage3_pipeline_helpers import CsvBatchWriter
+from .uipsf_model_loader import load_uipsf_coeff_tensor
 
 
 logger = logging.getLogger("stormpipe.cyl_lens_calibration")
@@ -90,6 +95,17 @@ class CylindricalLensCalibrationSettings:
     # -------------------------------------------------------------------------
     channel_tag: str = "R"  # "R" or "T"
     channel_map: dict[str, int] | None = None
+
+    # PSF model file format:
+    #   "SMAP"  -> MATLAB/SMAP .mat model
+    #   "uiPSF" -> Python uiPSF .h5 model
+    psf_model_format: str = "SMAP"
+
+    # uiPSF-only options. Ignored when psf_model_format="SMAP".
+    uipsf_coeff_key: str = "coeff"
+    uipsf_z0_index: int | None = None
+    uipsf_normf: tuple[float, float] = (1.0, 1.0)
+    uipsf_swap_xy_axes: bool = False
 
     # -------------------------------------------------------------------------
     # Camera correction
@@ -147,9 +163,19 @@ class CylindricalLensCalibrationSettings:
     min_pairs_for_homography: int = 4
 
     # -------------------------------------------------------------------------
+    # Output organization
+    # -------------------------------------------------------------------------
+    # The final text homography is written directly in output_dir.
+    # All CSV diagnostics, pair-level outputs, and the NPY copy are written under
+    # output_dir / diagnostics_dir_name.
+    homography_txt_name: str = "cyl_lens_correction_projective_homography.txt"
+    homography_npy_name: str = "cyl_lens_correction_projective_homography.npy"
+    diagnostics_dir_name: str = "calibration_diagnostics"
+
+    # -------------------------------------------------------------------------
     # Run behavior
     # -------------------------------------------------------------------------
-    overwrite_existing_locs: bool = False
+    overwrite_existing_locs: bool = True
     skip_failed_pairs: bool = True
 
     def pipeline_settings_for_spline_fit(self) -> Settings:
@@ -164,6 +190,13 @@ class CylindricalLensCalibrationSettings:
         return Settings(
             data_dir=Path(self.calibration_dir),
             psf_model=Path(self.psf_model),
+            psf_model_format=str(self.psf_model_format),
+
+            uipsf_coeff_key=str(self.uipsf_coeff_key),
+            uipsf_z0_index=self.uipsf_z0_index,
+            uipsf_normf=tuple(self.uipsf_normf),
+            uipsf_swap_xy_axes=bool(self.uipsf_swap_xy_axes),
+
             pipeline_mode="full",
             channel_map=channel_map,
             input_search_mode=self.input_search_mode,
@@ -192,6 +225,101 @@ class CylindricalLensMoviePair:
     cylindrical_tif: Path
     no_cylindrical_tif: Path
 
+def _normalized_channel_tag(settings: CylindricalLensCalibrationSettings) -> str:
+    tag = str(settings.channel_tag).strip().upper()
+    if tag not in {"R", "T"}:
+        raise ValueError(f"channel_tag must be 'R' or 'T', got {settings.channel_tag!r}")
+    return tag
+
+
+def _channel_map_for_settings(settings: CylindricalLensCalibrationSettings) -> dict[str, int]:
+    if settings.channel_map is None:
+        return {"R": 0, "T": 1}
+    return dict(settings.channel_map)
+
+
+def prepare_calibration_spline_channel_model(
+    settings: CylindricalLensCalibrationSettings,
+    *,
+    pipeline_settings: Settings | None = None,
+) -> ChannelModel:
+    """
+    Prepare only the single spline PSF model needed for the cylindrical-lens
+    calibration movie.
+
+    This avoids requiring both R and T models when the calibration only fits one
+    channel.
+    """
+    tag = _normalized_channel_tag(settings)
+
+    channel_map = _channel_map_for_settings(settings)
+    if tag not in channel_map:
+        raise ValueError(
+            f"channel_map must contain an entry for channel_tag={tag!r}; "
+            f"got keys {sorted(channel_map)}"
+        )
+
+    ch_idx = int(channel_map[tag])
+
+    if pipeline_settings is None:
+        pipeline_settings = settings.pipeline_settings_for_spline_fit()
+
+    fmt = psf_model_format_normalized(pipeline_settings)
+
+    if fmt == "SMAP":
+        psf = load_channel_psf_models(
+            pipeline_settings.psf_model,
+            {tag: ch_idx},
+            verbose=False,
+        )
+
+        psf[tag]["mirror"] = False
+
+        coeff_loclib = coeff_xyzb_matlab_to_single_channel_loclib_bzyx(
+            psf[tag]["coeff"]
+        )
+        splinesize = build_single_channel_splinesize_for_dll(coeff_loclib)
+
+        return ChannelModel(
+            coeff=np.ascontiguousarray(coeff_loclib, dtype=np.float32),
+            splinesize=np.asarray(splinesize, dtype=np.int32),
+            zseed=np.float32(psf[tag]["z0"] + 1e-6),
+            dz=float(psf[tag]["dz"]),
+            z0=int(psf[tag]["z0"]),
+            mirror=bool(psf[tag]["mirror"]),
+            normf=float(psf[tag]["normf"]),
+        )
+
+    if fmt == "uiPSF":
+        data = load_uipsf_coeff_tensor(
+            pipeline_settings.psf_model,
+            coeff_key=pipeline_settings.uipsf_coeff_key,
+            z0_index=pipeline_settings.uipsf_z0_index,
+            normf=pipeline_settings.uipsf_normf,
+            swap_xy_axes=pipeline_settings.uipsf_swap_xy_axes,
+            verbose=True,
+        )
+
+        if ch_idx not in (0, 1):
+            raise ValueError(
+                f"uiPSF calibration supports channel indices 0 and 1 only; "
+                f"channel_map[{tag!r}]={ch_idx}"
+            )
+
+        coeff_loclib = np.ascontiguousarray(data.coeff[ch_idx], dtype=np.float32)
+        splinesize = build_single_channel_splinesize_for_dll(coeff_loclib)
+
+        return ChannelModel(
+            coeff=coeff_loclib,
+            splinesize=np.asarray(splinesize, dtype=np.int32),
+            zseed=np.float32(data.zseed),
+            dz=float(data.dz),
+            z0=int(data.z0),
+            mirror=bool(data.mirror),
+            normf=float(data.normf[ch_idx]),
+        )
+
+    raise ValueError(f"Unsupported psf_model_format={fmt!r}")
 
 def _safe_stem_component(text: str) -> str:
     text = str(text).strip().replace("µ", "u")
@@ -602,6 +730,8 @@ def fit_no_cylindrical_movie_gaussian(
 def _filter_locs_for_centroids(
     locs: pd.DataFrame,
     settings: CylindricalLensCalibrationSettings,
+    *,
+    iteration_cap: int | None = None,
 ) -> pd.DataFrame:
     if locs is None or locs.empty:
         return pd.DataFrame(columns=list(locs.columns) if locs is not None else [])
@@ -633,9 +763,12 @@ def _filter_locs_for_centroids(
         and "iterations" in df.columns
     ):
         df["iterations"] = pd.to_numeric(df["iterations"], errors="coerce")
-        # Different fitters can have different iteration caps. This deliberately
-        # uses the larger cap so both spline and Gaussian tables can pass through.
-        max_iter = max(int(settings.gpu_iterations), int(settings.gaussian_iterations))
+
+        if iteration_cap is None:
+            max_iter = max(int(settings.gpu_iterations), int(settings.gaussian_iterations))
+        else:
+            max_iter = int(iteration_cap)
+
         df = df.loc[df["iterations"] < max_iter].copy()
 
     return df.reset_index(drop=True)
@@ -652,7 +785,18 @@ def localizations_to_bead_centroids(
     """
     from sklearn.cluster import DBSCAN
 
-    df = _filter_locs_for_centroids(locs, settings)
+    if source_label == "cylindrical":
+        iteration_cap = int(settings.gpu_iterations)
+    elif source_label == "no_cylindrical":
+        iteration_cap = int(settings.gaussian_iterations)
+    else:
+        iteration_cap = None
+
+    df = _filter_locs_for_centroids(
+        locs,
+        settings,
+        iteration_cap=iteration_cap,
+    )
 
     if df.empty:
         return pd.DataFrame(
@@ -823,8 +967,18 @@ def estimate_global_homography(
     if missing:
         raise ValueError(f"Correspondence table missing columns: {sorted(missing)}")
 
-    src = correspondences[["x_cyl", "y_cyl"]].to_numpy(dtype=np.float64)
-    dst = correspondences[["x_nocyl", "y_nocyl"]].to_numpy(dtype=np.float64)
+    input_correspondences = correspondences.copy()
+
+    src = input_correspondences[["x_cyl", "y_cyl"]].to_numpy(dtype=np.float64)
+    dst = input_correspondences[["x_nocyl", "y_nocyl"]].to_numpy(dtype=np.float64)
+
+    finite = np.isfinite(src).all(axis=1) & np.isfinite(dst).all(axis=1)
+    n_nonfinite_dropped = int(np.count_nonzero(~finite))
+
+    if n_nonfinite_dropped:
+        input_correspondences = input_correspondences.loc[finite].copy()
+        src = src[finite]
+        dst = dst[finite]
 
     if src.shape[0] < int(settings.min_pairs_for_homography):
         raise RuntimeError(
@@ -854,7 +1008,7 @@ def estimate_global_homography(
     residual_xy = pred - dst
     residual_px = np.sqrt(np.sum(residual_xy**2, axis=1))
 
-    corr = correspondences.copy()
+    corr = input_correspondences.copy()
     corr["x_cyl_transformed"] = pred[:, 0]
     corr["y_cyl_transformed"] = pred[:, 1]
     corr["dx_after_px"] = residual_xy[:, 0]
@@ -866,6 +1020,8 @@ def estimate_global_homography(
     post_rmse_inlier_px = _rmse_xy(pred[inlier_mask], dst[inlier_mask])
 
     summary = {
+        "n_correspondences_input": int(len(correspondences)),
+        "n_nonfinite_correspondences_dropped": int(n_nonfinite_dropped),
         "n_correspondences_total": int(src.shape[0]),
         "n_ransac_inliers": int(np.count_nonzero(inlier_mask)),
         "ransac_inlier_ratio": float(np.mean(inlier_mask)),
@@ -889,6 +1045,12 @@ def run_cylindrical_lens_homography_calibration(
     output_dir = Path(settings.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    diagnostics_dir = output_dir / str(settings.diagnostics_dir_name)
+    diagnostics_dir.mkdir(parents=True, exist_ok=True)
+
+    pair_outputs_root = diagnostics_dir / "pairs"
+    pair_outputs_root.mkdir(parents=True, exist_ok=True)
+
     pairs = find_cylindrical_lens_movie_pairs(
         settings.calibration_dir,
         cylindrical_suffix=settings.cylindrical_suffix,
@@ -903,19 +1065,21 @@ def run_cylindrical_lens_homography_calibration(
         settings.calibration_dir,
     )
 
-    if settings.channel_tag not in {"R", "T"}:
-        raise ValueError("channel_tag must be 'R' or 'T'")
+    channel_tag = _normalized_channel_tag(settings)
 
     dll = localizationlib(usecuda=int(settings.usecuda))
 
     pipeline_settings = settings.pipeline_settings_for_spline_fit()
-    chan_models = prepare_channel_models(pipeline_settings)
+    cylindrical_model = prepare_calibration_spline_channel_model(
+        settings,
+        pipeline_settings=pipeline_settings,
+    )
 
     all_pair_tables: list[pd.DataFrame] = []
     pair_summaries: list[dict] = []
 
     for pair in pairs:
-        pair_outdir = output_dir / pair.stem
+        pair_outdir = pair_outputs_root / pair.stem
         pair_outdir.mkdir(parents=True, exist_ok=True)
 
         cyl_csv = pair_outdir / f"{pair.stem}_cylindrical_spline_locs.csv"
@@ -937,9 +1101,9 @@ def run_cylindrical_lens_homography_calibration(
 
             if settings.overwrite_existing_locs or not cyl_csv.exists():
                 fit_stage1_single_channel(
-                    settings.channel_tag,
+                    channel_tag,
                     pair.cylindrical_tif,
-                    chan_models[settings.channel_tag],
+                    cylindrical_model,
                     pipeline_settings,
                     dll,
                     out_csv=cyl_csv,
@@ -1011,14 +1175,14 @@ def run_cylindrical_lens_homography_calibration(
             if not settings.skip_failed_pairs:
                 pair_summaries.append(row)
                 pd.DataFrame(pair_summaries).to_csv(
-                    output_dir / "calibration_pair_summary.csv",
+                    diagnostics_dir / "calibration_pair_summary.csv",
                     index=False,
                 )
                 raise
 
         pair_summaries.append(row)
         pd.DataFrame(pair_summaries).to_csv(
-            output_dir / "calibration_pair_summary.csv",
+            diagnostics_dir / "calibration_pair_summary.csv",
             index=False,
         )
 
@@ -1026,7 +1190,7 @@ def run_cylindrical_lens_homography_calibration(
         raise RuntimeError("No bead correspondences were generated from any calibration pair.")
 
     pooled = pd.concat(all_pair_tables, ignore_index=True)
-    pooled_raw_csv = output_dir / "global_bead_correspondences_raw.csv"
+    pooled_raw_csv = diagnostics_dir / "global_bead_correspondences_raw.csv"
     pooled.to_csv(pooled_raw_csv, index=False)
 
     H, pooled_with_fit, global_summary = estimate_global_homography(
@@ -1034,12 +1198,13 @@ def run_cylindrical_lens_homography_calibration(
         settings,
     )
 
-    H_npy = output_dir / "H_cyl_to_nocyl.npy"
-    H_txt = output_dir / "H_cyl_to_nocyl.txt"
-    np.save(H_npy, H)
-    np.savetxt(H_txt, H, fmt="%.10f")
+    H_txt = output_dir / str(settings.homography_txt_name)
+    H_npy = diagnostics_dir / str(settings.homography_npy_name)
 
-    pooled_fit_csv = output_dir / "global_bead_correspondences_with_fit.csv"
+    np.savetxt(H_txt, H, fmt="%.10f")
+    np.save(H_npy, H)
+
+    pooled_fit_csv = diagnostics_dir / "global_bead_correspondences_with_fit.csv"
     pooled_with_fit.to_csv(pooled_fit_csv, index=False)
 
     # Pair-level residual summary using the final global homography.
@@ -1057,7 +1222,7 @@ def run_cylindrical_lens_homography_calibration(
         )
     )
     pair_residual_summary.to_csv(
-        output_dir / "calibration_pair_residual_summary.csv",
+        diagnostics_dir / "calibration_pair_residual_summary.csv",
         index=False,
     )
 
@@ -1065,21 +1230,23 @@ def run_cylindrical_lens_homography_calibration(
         {
             "calibration_dir": str(settings.calibration_dir),
             "output_dir": str(output_dir),
+            "diagnostics_dir": str(diagnostics_dir),
+            "pair_outputs_dir": str(pair_outputs_root),
             "n_movie_pairs_discovered": int(len(pairs)),
             "n_movie_pairs_completed": int(
                 sum(1 for r in pair_summaries if r.get("status") == "completed")
             ),
-            "H_cyl_to_nocyl_npy": str(H_npy),
             "H_cyl_to_nocyl_txt": str(H_txt),
+            "H_cyl_to_nocyl_npy": str(H_npy),
             "global_bead_correspondences_raw_csv": str(pooled_raw_csv),
             "global_bead_correspondences_with_fit_csv": str(pooled_fit_csv),
         }
     )
 
-    homography_summary_csv = output_dir / "homography_summary.csv"
+    homography_summary_csv = diagnostics_dir / "homography_summary.csv"
     pd.DataFrame([global_summary]).to_csv(homography_summary_csv, index=False)
 
-    logger.info("Saved H_cyl_to_nocyl: %s", H_txt)
+    logger.info("Saved cylindrical-lens correction homography: %s", H_txt)
     logger.info("Saved homography summary: %s", homography_summary_csv)
 
     return {

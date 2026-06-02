@@ -25,9 +25,12 @@ settings = CylindricalLensCalibrationSettings(
     # =========================================================================
     # Required paths
     # =========================================================================
-    calibration_dir=Path(r"g:\pypline\calibration\3Dto2D_correction_example_folder"),
-    output_dir=Path(r"g:\pypline\calibration\3Dto2D_correction_example_folder\cylindrical_lens_calibration_output"),
-    psf_model=Path(r"G:\pypline\calibration\Axcal_inputZStack_cam_R_3dcal.mat"),
+    calibration_dir=Path(r"G:\3Dto2D_correction_example_folder"),
+    output_dir=Path(r"G:\3Dto2D_correction_example_folder\cylindrical_lens_calibration_output"),
+    psf_model_format="uiPSF",
+    psf_model=Path(
+        r"Z:\DATA\NC_DATA_ABBELIGHT_#1\Christopher\241121_axcal\mat_for_uiPSF\uiPSF_output\xySwap_PSFmodel_zernike_vector_multi.h5"
+    ),
 
     # =========================================================================
     # Calibration pair naming
