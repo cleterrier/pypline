@@ -14,7 +14,7 @@ https://www.biorxiv.org/content/10.64898/2026.03.27.714864v1
 ## What is pypline
 A pipeline for spectral demixing 3D-SMLM adapted for two-camera setups (like the Abbelight SAFe360).
 
-You need to have PSF calibration files prepared (either from SMAP or ui-PSF).  Then for every pair of image stacks (obtained from the two cameras) inside a folder, it automates the following steps:
+You need to have PSF calibration files prepared (either from SMAP or ui-PSF).  Then for every pair of image stacks (R and T, obtained from each camera) inside a folder, it automates the following steps:
 1. Fitting of each side (R and T) independently using spline fitting from the PSF calibrations.
 2. Calculation of the transform between channels from step 1 data.
 3. Global fitting using GlobLoc (with the individual fitting from step 1 as seed), with either fixed ratios (performs channel assignment) or free ratios (channel assignment has to be done downstream of the pipeline using the calculated ratios).
