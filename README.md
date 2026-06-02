@@ -104,9 +104,9 @@ Has to use the Matlab PSF calibration as of now (.mat file, not ui-PSF .h5)
 Outputs the file to use in cylindrical_lens_correction_calibration.py: as H_cyl_to_nocyl.txt
 
 ## Adding COMET drift correction
-https://github.com/gpufit/Comet
-download the COMET repository as a .zip file
-put Comet-master in the pypline folder
+download the COMET repository as a .zip file: https://github.com/gpufit/Comet
+
+put Comet-master in the pypline folder:
 ```
 cd Comet-master\Python_interface
 pip install -e .
