@@ -1,4 +1,4 @@
-# uiPSF_prepare_bead_stacks.py
+# uiPSF_prepare_bead_stacks.py AUTHOR: Christopher Parperis 2026
 #Stitch R/T bead stacks together for input to ui-PSF
 
 from pathlib import Path

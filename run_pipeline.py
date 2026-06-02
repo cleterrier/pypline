@@ -1,4 +1,4 @@
-# run_pipeline.py
+# run_pipeline.py AUTHOR: Christopher Parperis 2026
 
 """
 Main entrypoint for the spectral-demixing GlobLoc STORM pipeline.
@@ -106,12 +106,12 @@ settings = Settings(
     # Drift correction
     # =========================================================================
     run_rcc_drift_correction=True, # Redundant cross-correlation drift correction
-    run_comet_drift_correction=True, # COMET drift correction (runs after RCC if both "True")
+    run_comet_drift_correction=False, # COMET drift correction (runs after RCC if both "True")
 
     # =========================================================================
     # Render-ready channel CSV export
     # =========================================================================
-    apply_cylindrical_lens_xy_correction_for_render=True,  # xy homography to correct cylindrical lens distortion
+    apply_cylindrical_lens_xy_correction_for_render=False,  # xy homography to correct cylindrical lens distortion
     cylindrical_lens_xy_homography=Path(
         r"path\to\cyl_lens_correction_projective_homography.txt"
     ),

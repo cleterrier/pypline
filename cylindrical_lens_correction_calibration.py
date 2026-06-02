@@ -1,4 +1,4 @@
-# cylindrical_lens_correction_calibration.py
+# cylindrical_lens_correction_calibration.py AUTHOR: Christopher Parperis 2026
 
 """
 User entry point for cylindrical-lens field-distortion homography calibration.
@@ -25,11 +25,11 @@ settings = CylindricalLensCalibrationSettings(
     # =========================================================================
     # Required paths
     # =========================================================================
-    calibration_dir=Path(r"G:\3Dto2D_correction_example_folder"),
-    output_dir=Path(r"G:\3Dto2D_correction_example_folder\cylindrical_lens_calibration_output"),
+    calibration_dir=Path(r"path\to\3Dto2D_beads_folder"),
+    output_dir=Path(r"path\to\cylindrical_lens_calibration_output"),
     psf_model_format="uiPSF",
     psf_model=Path(
-        r"Z:\DATA\NC_DATA_ABBELIGHT_#1\Christopher\241121_axcal\mat_for_uiPSF\uiPSF_output\xySwap_PSFmodel_zernike_vector_multi.h5"
+        r"path\to\psf_model.h5"
     ),
 
     # =========================================================================
