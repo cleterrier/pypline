@@ -111,9 +111,9 @@ put Comet-master in the pypline folder:
 cd Comet-master\Python_interface
 pip install -e .
 ```
-
 Installing COMET will downgrade numpy and matplotlib compared to the pypline install but it still runs.  
-Test by using:
+
+Test COMET by using:
 ```
 comet_self_test --plot 
 ```
