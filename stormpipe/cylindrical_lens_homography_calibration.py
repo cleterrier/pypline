@@ -104,7 +104,6 @@ class CylindricalLensCalibrationSettings:
     # uiPSF-only options. Ignored when psf_model_format="SMAP".
     uipsf_coeff_key: str = "coeff"
     uipsf_z0_index: int | None = None
-    uipsf_normf: tuple[float, float] = (1.0, 1.0)
     uipsf_swap_xy_axes: bool = False
 
     # -------------------------------------------------------------------------
@@ -194,7 +193,6 @@ class CylindricalLensCalibrationSettings:
 
             uipsf_coeff_key=str(self.uipsf_coeff_key),
             uipsf_z0_index=self.uipsf_z0_index,
-            uipsf_normf=tuple(self.uipsf_normf),
             uipsf_swap_xy_axes=bool(self.uipsf_swap_xy_axes),
 
             pipeline_mode="full",
@@ -295,7 +293,6 @@ def prepare_calibration_spline_channel_model(
             pipeline_settings.psf_model,
             coeff_key=pipeline_settings.uipsf_coeff_key,
             z0_index=pipeline_settings.uipsf_z0_index,
-            normf=pipeline_settings.uipsf_normf,
             swap_xy_axes=pipeline_settings.uipsf_swap_xy_axes,
             verbose=True,
         )

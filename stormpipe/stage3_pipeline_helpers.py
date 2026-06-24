@@ -204,7 +204,6 @@ def prepare_stage3_context(
                 settings.psf_model,
                 coeff_key=settings.uipsf_coeff_key,
                 z0_index=settings.uipsf_z0_index,
-                normf=settings.uipsf_normf,
                 swap_xy_axes=settings.uipsf_swap_xy_axes,
                 verbose=True,
             )

@@ -37,10 +37,6 @@ class Settings:
     # Optional uiPSF z0 override. If None, infer z0 as Z // 2.
     uipsf_z0_index: int | None = None
 
-    # uiPSF does not expose SMAP-style cspline.normf in the same way.
-    # Default to neutral per-channel normalization.
-    uipsf_normf: tuple[float, float] = (1.0, 1.0)
-
     # If True, swap the final two spatial axes of the uiPSF coefficient tensor:
     #     (C, 64, Z, Y, X) -> (C, 64, Z, X, Y)
     #
@@ -411,13 +407,6 @@ class Settings:
             if self.uipsf_z0_index is not None and int(self.uipsf_z0_index) < 0:
                 raise ValueError("uipsf_z0_index must be None or >= 0")
 
-            normf = np.asarray(self.uipsf_normf, dtype=np.float32).reshape(-1)
-            if normf.shape != (2,):
-                raise ValueError("uipsf_normf must contain exactly two values")
-            if not np.all(np.isfinite(normf)):
-                raise ValueError("uipsf_normf values must be finite")
-            if np.any(normf <= 0):
-                raise ValueError("uipsf_normf values must be > 0")
             if not isinstance(self.uipsf_swap_xy_axes, bool):
                 raise ValueError("uipsf_swap_xy_axes must be True or False")
             

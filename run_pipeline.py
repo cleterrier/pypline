@@ -44,7 +44,6 @@ settings = Settings(
     # uiPSF-only options. Ignored when psf_model_format="SMAP".
     uipsf_coeff_key="coeff",       # "coeff", "coeff_reverse", or "coeff_bead"
     uipsf_z0_index=None,           # None -> infer Z // 2
-    uipsf_normf=(1.0, 0.4853629229415472),        # neutral channel normalization
     uipsf_swap_xy_axes=False,      # swap final PSF coefficient axes Y/X if needed
 
     # =========================================================================

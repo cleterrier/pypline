@@ -75,7 +75,9 @@ class UiPsfSplineData:
         Spline index corresponding to z=0 according to the pipeline convention.
 
     normf
-        Per-channel photon normalization factors. Defaults to [1, 1].
+        Per-channel photon normalization factors estimated from the central
+        plane of the loaded spline coefficient tensor. Channel 1 is normalized
+        to 1.
     """
     coeff: np.ndarray
     splinesize_global: np.ndarray
@@ -179,12 +181,82 @@ def _validate_uipsf_coeff_tensor(coeff: np.ndarray, *, coeff_path: str) -> tuple
     return C, B, Z, Y, X
 
 
+def estimate_uipsf_normf_from_coeff(
+    coeff: np.ndarray,
+    *,
+    z0_index: int,
+) -> np.ndarray:
+    """
+    Estimate SMAP-style dual-channel normalization directly from a uiPSF
+    spline coefficient tensor.
+
+    The coefficient tensor must use the packed uiPSF layout:
+
+        (channel, basis, z, y, x)
+
+    The zero-order spline coefficient at basis index 0 is integrated over
+    x and y at the selected central z plane. Channel 1 is normalized to 1,
+    and channel 2 is expressed relative to channel 1.
+
+    Parameters
+    ----------
+    coeff
+        Dual-channel uiPSF coefficient tensor with shape (2, 64, Z, Y, X).
+    z0_index
+        Zero-based index of the central/reference z plane.
+
+    Returns
+    -------
+    np.ndarray
+        Float32 normalization vector with shape (2,), where the first value
+        is exactly 1.0.
+    """
+    coeff = np.asarray(coeff)
+
+    _, _, Z, _, _ = _validate_uipsf_coeff_tensor(
+        coeff,
+        coeff_path="uiPSF coefficient tensor",
+    )
+
+    z0 = int(z0_index)
+    if not 0 <= z0 < Z:
+        raise ValueError(
+            f"z0_index must be in [0, {Z - 1}], got {z0}"
+        )
+
+    channel_integrals = np.sum(
+        coeff[:, 0, z0, :, :],
+        axis=(1, 2),
+        dtype=np.float64,
+    )
+
+    if channel_integrals.shape != (2,):
+        raise RuntimeError(
+            "Expected two integrated channel values, "
+            f"got shape {channel_integrals.shape}"
+        )
+
+    if (
+        not np.all(np.isfinite(channel_integrals))
+        or np.any(channel_integrals <= 0)
+    ):
+        raise ValueError(
+            "Cannot estimate uiPSF normf: central-plane coefficient "
+            "integrals must be finite and positive, "
+            f"got {channel_integrals.tolist()}"
+        )
+
+    normf = channel_integrals / channel_integrals[0]
+    normf[0] = 1.0
+
+    return np.ascontiguousarray(normf, dtype=np.float32)
+
+
 def load_uipsf_coeff_tensor(
     h5_path: Path | str,
     *,
     coeff_key: str = "coeff",
     z0_index: int | None = None,
-    normf: tuple[float, float] | np.ndarray = (1.0, 1.0),
     swap_xy_axes: bool = False,
     verbose: bool = True,
 ) -> UiPsfSplineData:
@@ -253,12 +325,10 @@ def load_uipsf_coeff_tensor(
     dz = _pixel_size_z_to_dz_nm(params)
     zseed = np.float32(z0 + 1e-6)
 
-    normf_arr = np.asarray(normf, dtype=np.float32).reshape(-1)
-    if normf_arr.shape != (2,):
-        raise ValueError(f"normf must contain exactly two values, got {normf_arr.shape}")
-    if not np.all(np.isfinite(normf_arr)) or np.any(normf_arr <= 0):
-        raise ValueError("normf must contain two finite positive values")
-    normf_arr = np.ascontiguousarray(normf_arr, dtype=np.float32)
+    normf_arr = estimate_uipsf_normf_from_coeff(
+        coeff,
+        z0_index=z0,
+    )
 
     splinesize_global = np.asarray([X, Y, Z, B, C], dtype=np.int32)
 
@@ -266,7 +336,8 @@ def load_uipsf_coeff_tensor(
         logger.info(
             "Loaded uiPSF spline model | source=%s | dataset=%s | "
             "coeff=%s (C,B,Z,Y,X) | splinesize=%s | dz=%.6g nm | "
-            "z0=%d | zseed=%.6f | normf=%s | swap_xy_axes_applied=%s",
+            "z0=%d | zseed=%.6f | estimated_normf=%s | "
+            "swap_xy_axes_applied=%s",
             h5_path,
             coeff_path,
             coeff.shape,
@@ -296,7 +367,6 @@ def load_uipsf_global_dual_channel_spline_model(
     *,
     coeff_key: str = "coeff",
     z0_index: int | None = None,
-    normf: tuple[float, float] | np.ndarray = (1.0, 1.0),
     swap_xy_axes: bool = False,
     verbose: bool = True,
 ) -> GlobalDualChannelSplineModel:
@@ -313,7 +383,6 @@ def load_uipsf_global_dual_channel_spline_model(
         h5_path,
         coeff_key=coeff_key,
         z0_index=z0_index,
-        normf=normf,
         swap_xy_axes=swap_xy_axes,
         verbose=verbose,
     )
